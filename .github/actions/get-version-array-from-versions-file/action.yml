@@ -1,0 +1,115 @@
+# Distributed under the OSI-approved BSD 3-Clause License.
+# See accompanying file LICENSE-BSD for details.
+
+name: get-version-array-from-versions-file
+
+description: Get the Version Arrary from the `versions.json` file.
+
+inputs:
+  working-directory:
+    required: false
+    default: ${{ github.workspace }}
+    description: >
+      [Optional] The directory from which commands will be executed or files located. Defaults to '\$\{\{ github.workspace \}\}'.
+  mode:
+    required: true    # [Required]
+    description: >
+      [Required] The mode of extracting versions. Accepted values are "group" for aggregating versions across a version group, or "single" for fetching a specific version.
+  version:
+    required: true    # [Required]
+    description: >
+      [Required] The version to used for extraction when in "single" mode.
+  version-group:
+    required: true    # [Required]
+    description: >
+      [Required] The version group used for extraction when in "group" mode.
+  version-filter:
+    required: true    # [Required]
+    description: >
+      [Required] This input filters the version objects based on their 'VERSION_COMPENDIUM' content. Possible values are: 'all', 'gettext', and 'crowdin'.
+  versions-file:
+    required: false
+    default: 'versions.json'
+    description: >
+      [Optional] The path to the `versions.json` file. Defaults to 'versions.json'.
+
+outputs:
+  VERSION_NUM:
+    value: ${{ steps.gvav.outputs.VERSION_NUM }}
+    description: >
+      The number of versions included in the VERSION_ARRAY.
+  VERSION_ARRAY:
+    value: ${{ steps.gvav.outputs.VERSION_ARRAY }}
+    description: >
+      A JSON array containing the requested versions.
+
+runs:
+  using: composite
+  steps:
+    - name: Get VERSION_ARRAY from versions.json
+      id: gvav
+      shell: bash
+      run: |
+        MODE="${{ inputs.mode }}"
+        VERSION="${{ inputs.version }}"
+        VERSION_GROUP="${{ inputs.version-group }}"
+        VERSION_FILTER="${{ inputs.version-filter }}"
+        VERSIONS_FILE="${{ inputs.versions-file }}"
+        WORKING_DIRECTORY=$(echo "${{ inputs.working-directory }}" | sed 's#\\#/#g' | sed 's#^\([A-Za-z]\):#/\L\1#')
+
+        cd "${WORKING_DIRECTORY}"
+
+        if [[ "${MODE}" == "group" ]]; then
+          if [[ "${VERSION_GROUP}" == "all" ]]; then
+            VERSION_GROUP_FILTER=""
+          else
+            VERSION_GROUP_FILTER="\"${VERSION_GROUP}\""
+          fi
+          if [[ "${VERSION_FILTER}" == "all" ]]; then
+            JQ_FILTER="[.[${VERSION_GROUP_FILTER}] | map(.)] | add"
+          elif [[ "${VERSION_FILTER}" == "gettext" ]]; then
+            JQ_FILTER="[.[${VERSION_GROUP_FILTER}] | map(select(.VERSION_COMPENDIUM != \"\") | .)] | add"
+          elif [[ "${VERSION_FILTER}" == "crowdin" ]]; then
+            JQ_FILTER="[.[${VERSION_GROUP_FILTER}] | map(select(.VERSION_COMPENDIUM == \"\") | .)] | add"
+          else
+            echo "Error: Invalid VERSION_FILTER value. (${VERSION_FILTER})" >&2
+            exit 1
+          fi
+          JQ_FILE="${VERSIONS_FILE}"
+          OBJECT_LIST=$(jq -c "${JQ_FILTER}" "${JQ_FILE}")
+          VERSION_ARRAY=$(echo "${OBJECT_LIST}" | jq -c "[.[].VERSION]")
+        elif [[ "${MODE}" == "single" ]]; then
+          if [[ "${VERSION_FILTER}" == "all" ]]; then
+            JQ_FILTER="[.[] | map(.)] | add"
+          elif [[ "${VERSION_FILTER}" == "gettext" ]]; then
+            JQ_FILTER="[.[] | map(select(.VERSION_COMPENDIUM != \"\") | .)] | add"
+          elif [[ "${VERSION_FILTER}" == "crowdin" ]]; then
+            JQ_FILTER="[.[] | map(select(.VERSION_COMPENDIUM == \"\") | .)] | add"
+          else
+            echo "Error: Invalid VERSION_FILTER value. (${VERSION_FILTER})" >&2
+            exit 1
+          fi
+          JQ_FILE="${VERSIONS_FILE}"
+          OBJECT_LIST=$(jq -c "${JQ_FILTER}" "${JQ_FILE}")
+          VERSION_VALUE=$(echo "${OBJECT_LIST}" | jq -r ".[] | select(.VERSION == \"${VERSION}\") | .VERSION")
+          if [[ "${VERSION_VALUE}" != "" ]]; then
+            echo "VERSION '${VERSION}' is found in the list."
+          else
+            echo "Error: VERSION '${VERSION}' is NOT found in the list." >&2
+            exit 1
+          fi
+          VERSION_ARRAY="[ \"${VERSION_VALUE}\" ]"
+        else
+          echo "Error: Invalid MODE value. (${MODE})" >&2
+          exit 1
+        fi
+
+        VERSION_NUM=$(jq "length" <<< "${VERSION_ARRAY}")
+
+        echo "VERSION_NUM=${VERSION_NUM}" >> ${GITHUB_OUTPUT}
+        echo "VERSION_NUM:"
+        echo "${VERSION_NUM}"
+
+        echo "VERSION_ARRAY=${VERSION_ARRAY}" >> ${GITHUB_OUTPUT}
+        echo "VERSION_ARRAY:"
+        echo "${VERSION_ARRAY}" | jq "."

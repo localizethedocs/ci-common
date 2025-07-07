@@ -1,0 +1,154 @@
+# Distributed under the OSI-approved BSD 3-Clause License.
+# See accompanying file LICENSE-BSD for details.
+
+name: use-crowdin-upload-pot
+
+on:
+  workflow_call:
+    inputs:
+      ENABLE:
+        type: string
+        required: false
+        default: 'true'
+        description: >
+          [Optional] Whether to enable the job (e.g., 'true' or 'false'). Defaults to 'true'.
+      RUNNER:
+        type: string
+        required: false
+        default: 'ubuntu-latest'
+        description: >
+          [Optional] The runner image for executing the job. Defaults to 'ubuntu-latest'.
+      CHECKOUT:
+        type: string
+        required: false
+        default: '${{ github.ref }}'
+        description: >
+          [Optional] The git reference to be checked out. Defaults to '\$\{\{ github.ref \}\}'
+      CMAKE_VERSION:
+        type: string
+        required: false
+        default: ''
+        description: >
+          [Optional] The version of the CMake command. Defaults to an empty string.
+      CROWDIN_VERSION:
+        type: string
+        required: false
+        default: ''
+        description: >
+          [Optional] The version of the Crowdin CLI command. Defaults to an empty string.
+      VERSION:
+        type: string
+        required: true    # [Required]
+        description: >
+          [Required] The version of the documentation.
+      ACTOR_NAME:
+        type: string
+        required: true    # [Required]
+        description: >
+          [Required] The user name of the GitHub actor.
+      ACTOR_EMAIL:
+        required: true    # [Required]
+        type: string
+        description: >
+          [Required] The user email of the GitHub actor.
+      CROWDIN_PROJECT_ID:
+        type: string
+        required: true    # [Required]
+        description: >
+          [Required] The numeric ID of the Crowdin project.
+      CROWDIN_BASE_URL:
+        type: string
+        required: true    # [Required]
+        description: >
+          [Required] The base URL of Crowdin server for API requests execution.
+    secrets:
+      ACTOR_GITHUB_TOKEN:
+        required: true    # [Required]
+        description: >
+          [Required] The personal access token of the GitHub actor.
+      CROWDIN_PERSONAL_TOKEN:
+        required: true    # [Required]
+        description: >
+          [Required] The personal access token for Crowdin authentication.
+
+jobs:
+  crowdin-upload-pot:
+    if: ${{ inputs.ENABLE == 'true' }}
+    runs-on: ${{ inputs.RUNNER }}
+    steps:
+      - name: Print Contexts/Inputs/Secrets
+        shell: bash
+        run: |
+          echo "[Contexts]"
+          echo "github.job = ${{ github.job }}"
+          echo "github.ref = ${{ github.ref }}"
+          echo "github.ref_name = ${{ github.ref_name }}"
+          echo "github.event_name = ${{ github.event_name }}"
+          echo "github.event.action = ${{ github.event.action }}"
+          echo "github.event.number = ${{ github.event.number }}"
+          echo "github.workflow = ${{ github.workflow }}"
+          echo "github.workflow_ref = ${{ github.workflow_ref }}"
+          echo "github.run_id = ${{ github.run_id }}"
+          echo "github.run_number = ${{ github.run_number }}"
+          echo "github.run_attempt = ${{ github.run_attempt }}"
+          echo "github.server_url = ${{ github.server_url }}"
+          echo "github.repository = ${{ github.repository }}"
+          echo "github.workspace = ${{ github.workspace }}"
+          echo "[Inputs]"
+          echo "inputs.ENABLE = ${{ inputs.ENABLE }}"
+          echo "inputs.RUNNER = ${{ inputs.RUNNER }}"
+          echo "inputs.CHECKOUT = ${{ inputs.CHECKOUT }}"
+          echo "inputs.CMAKE_VERSION = ${{ inputs.CMAKE_VERSION }}"
+          echo "inputs.CROWDIN_VERSION = ${{ inputs.CROWDIN_VERSION }}"
+          echo "inputs.VERSION = ${{ inputs.VERSION }}"
+          echo "inputs.ACTOR_NAME = ${{ inputs.ACTOR_NAME }}"
+          echo "inputs.ACTOR_EMAIL = ${{ inputs.ACTOR_EMAIL }}"
+          echo "inputs.CROWDIN_PROJECT_ID = ${{ inputs.CROWDIN_PROJECT_ID }}"
+          echo "inputs.CROWDIN_BASE_URL = ${{ inputs.CROWDIN_BASE_URL }}"
+          echo "[Secrets]"
+          echo "secrets.ACTOR_GITHUB_TOKEN = ${{ secrets.ACTOR_GITHUB_TOKEN }}"
+          echo "secrets.CROWDIN_PERSONAL_TOKEN = ${{ secrets.CROWDIN_PERSONAL_TOKEN }}"
+
+      - name: Checkout to '${{ inputs.CHECKOUT }}'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.CHECKOUT }}
+          token: ${{ secrets.ACTOR_GITHUB_TOKEN }}
+          submodules: true
+
+      - name: Install CMake
+        uses: ltdorgtest/ci-common/.github/actions/install-cmake@main
+        with:
+          cmake-version: ${{ inputs.CMAKE_VERSION }}
+
+      - name: Install Gettext
+        uses: ltdorgtest/ci-common/.github/actions/install-gettext@main
+
+      - name: Install Crowdin
+        uses: ltdorgtest/ci-common/.github/actions/install-crowdin@main
+        with:
+          crowdin-version: ${{ inputs.CROWDIN_VERSION }}
+
+      - name: Get Other Caches from the versions.json file
+        id: gocv
+        uses: ltdorgtest/ci-common/.github/actions/get-other-caches-from-versions-file@main
+        with:
+          version: ${{ inputs.VERSION }}
+
+      - name: Configure with 'all' preset for the '${{ inputs.VERSION }}' version
+        uses: ltdorgtest/ci-common/.github/actions/cmake-configure@main
+        with:
+          config-preset: 'all'
+          cache-version: ${{ inputs.VERSION }}
+          cache-version-compendium: ${{ steps.gocv.outputs.VERSION_COMPENDIUM }}
+          cache-auto-depend: 'OFF'
+
+      - name: Build the 'crowdin_upload_pot' target
+        uses: ltdorgtest/ci-common/.github/actions/cmake-build-target@main
+        with:
+          build-directory: out/build/all
+          build-target: 'crowdin_upload_pot'
+        env:
+          CROWDIN_PROJECT_ID: ${{ inputs.CROWDIN_PROJECT_ID }}
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+          CROWDIN_BASE_URL: ${{ inputs.CROWDIN_BASE_URL }}

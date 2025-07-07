@@ -1,0 +1,60 @@
+# Distributed under the OSI-approved BSD 3-Clause License.
+# See accompanying file LICENSE-BSD for details.
+
+name: get-pull-request-label-list-from-versions-file
+
+description: >
+  Get the label list for the pull request from `versions.json` file.
+
+inputs:
+  working-directory:
+    required: false
+    default: '${{ github.workspace }}'
+    description: >
+      [Optional] The directory from which to run commands or locate files. Defaults to `'\$\{\{ github.workspace \}\}'`.
+  version:
+    required: true    # [Required]
+    description: >
+      [Required] The version to search for in the specified `versions.json` file.
+  tms-label:
+    required: true    # [Required]
+    description: >
+      [Required] The TMS label added to the pull request lable list if the version is required to upload to the TMS.
+  versions-file:
+    required: false
+    default: 'versions.json'
+    description: >
+      [Optional] The path to the `versions.json` file. Defaults to 'versions.json'.
+
+outputs:
+  PULL_REQUEST_LABEL_LIST:
+    value: ${{ steps.gllpr.outputs.PULL_REQUEST_LABEL_LIST }}
+    description: >
+      A comma-separated list of pull request labels.
+
+runs:
+  using: composite
+  steps:
+    - name: Get the Label List for the Pull Request from versions.json
+      id: gllpr
+      shell: bash
+      run: |
+        VERSION="${{ inputs.version }}"
+        TMS_LABEL="${{ inputs.tms-label }}"
+        VERSIONS_FILE="${{ inputs.versions-file }}"
+        WORKING_DIRECTORY="${{ inputs.working-directory }}"
+
+        JQ_FILTER="[.[] | map(select(.VERSION_COMPENDIUM == \"\"))] | add | .[].VERSION"
+        JQ_FILE="${VERSIONS_FILE}"
+        VERSION_LINES=($(jq -r "${JQ_FILTER}" "${JQ_FILE}" | tr -d '\r'))
+        PULL_REQUEST_LABEL_LIST="gettext"
+        for VERSION_LINE in "${VERSION_LINES[@]}"; do
+          if [[ "${VERSION}" == "${VERSION_LINE}" ]]; then
+            PULL_REQUEST_LABEL_LIST="${PULL_REQUEST_LABEL_LIST},${TMS_LABEL}"
+            break
+          fi
+        done
+
+        echo "PULL_REQUEST_LABEL_LIST=${PULL_REQUEST_LABEL_LIST}" >> ${GITHUB_OUTPUT}
+        echo "PULL_REQUEST_LABEL_LIST:"
+        echo "${PULL_REQUEST_LABEL_LIST}"

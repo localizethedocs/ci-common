@@ -1,0 +1,22 @@
+# Distributed under the OSI-approved BSD 3-Clause License.
+# See accompanying file LICENSE-BSD for details.
+
+name: install-crowdin
+
+description: Install Crowdin
+
+inputs:
+  crowdin-version:
+    required: false
+    default: ''
+    description: >
+      The specific version of Crowdin CLI to install. Defaults to an empty string.
+
+runs:
+  using: composite
+  steps:
+    - name: Install Crowdin
+      shell: bash
+      run: |
+        npm install -g @crowdin/cli@${{ inputs.crowdin-version }}
+        crowdin --version

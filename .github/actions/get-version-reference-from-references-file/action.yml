@@ -1,0 +1,53 @@
+# Distributed under the OSI-approved BSD 3-Clause License.
+# See accompanying file LICENSE-BSD for details.
+
+name: get-version-reference-from-references-file
+
+description: Get the Version Reference from the `references.json` file.
+
+inputs:
+  working-directory:
+    required: false
+    default: ${{ github.workspace }}
+    description: >
+      [Optional] The directory from which to run commands or locate files. Defaults to '\$\{\{ github.workspace \}\}'.
+  jq-filter:
+    required: true    # [Required]
+    description: >
+      [Required] The jq filter expression used to extract the desired version reference from the JSON file.
+  references-file:
+    required: false
+    default: 'references.json'
+    description: >
+      [Optional] The path to the references.json file. Defaults to 'references.json'.
+
+outputs:
+  VERSION_REFERENCE:
+    value: ${{ steps.gvi.outputs.VERSION_REFERENCE }}
+    description: >
+      The extracted version reference string based on the specified jq filter and input file.
+
+runs:
+  using: composite
+  steps:
+    # Refer to:
+    # - https://github.com/peter-evans/create-pull-request/issues/2634#issuecomment-1870136711
+    # - https://github.com/github/docs/issues/21529
+    # - https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions#multiline-strings
+    - name: Get the Version Reference from the references.json file
+      id: gvi
+      shell: bash
+      run: |
+        JQ_FILTER="${{ inputs.jq-filter }}"
+        REFERENCES_FILE=$(echo "${{ inputs.references-file }}" | sed 's#\\#/#g' | sed 's#^\([A-Za-z]\):#/\L\1#')
+        WORKING_DIRECTORY=$(echo "${{ inputs.working-directory }}" | sed 's#\\#/#g' | sed 's#^\([A-Za-z]\):#/\L\1#')
+
+        cd "${WORKING_DIRECTORY}"
+
+        VERSION_REFERENCE=$(jq "${JQ_FILTER}" "${REFERENCES_FILE}")
+        DELIMITER="$(openssl rand -hex 8)"
+        echo "VERSION_REFERENCE<<${DELIMITER}"  >> ${GITHUB_OUTPUT}
+        echo "${VERSION_REFERENCE}"             >> ${GITHUB_OUTPUT}
+        echo "${DELIMITER}"                     >> ${GITHUB_OUTPUT}
+        echo "VERSION_REFERENCE:"
+        echo "${VERSION_REFERENCE}"

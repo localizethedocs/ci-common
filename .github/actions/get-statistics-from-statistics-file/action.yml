@@ -1,0 +1,43 @@
+# Distributed under the OSI-approved BSD 3-Clause License.
+# See accompanying file LICENSE-BSD for details.
+
+name: get-statistics-from-statistics-file
+
+description: Get Statistics from the `statistics.txt` file.
+
+inputs:
+  working-directory:
+    required: false
+    default: '${{ github.workspace }}'
+    description: >
+      [Optional] The directory from which to run commands or locate files. Defaults to '\$\{\{ github.workspace \}\}'.
+  statistics-file:
+    required: true    # [Required]
+    description: >
+      [Required] The path to the `statistics.txt` file.
+
+outputs:
+  STATISTICS:
+    value: ${{ steps.gsi.outputs.STATISTICS }}
+    description: >
+      The content of the `statistics.txt` file.
+
+runs:
+  using: composite
+  steps:
+    - name: Get the Statistics from the statistics.txt file
+      id: gsi
+      shell: bash
+      run: |
+        STATISTICS_FILE="${{ inputs.statistics-file }}"
+        WORKING_DIRECTORY=$(echo "${{ inputs.working-directory }}" | sed 's#\\#/#g' | sed 's#^\([A-Za-z]\):#/\L\1#')
+
+        cd "${WORKING_DIRECTORY}"
+
+        DELIMITER="$(openssl rand -hex 8)"
+        echo "STATISTICS<<${DELIMITER}" >> ${GITHUB_OUTPUT}
+        echo "$(<${STATISTICS_FILE})"   >> ${GITHUB_OUTPUT}
+        echo "${DELIMITER}"             >> ${GITHUB_OUTPUT}
+
+        echo "STATISTICS:"
+        echo "$(<${STATISTICS_FILE})"

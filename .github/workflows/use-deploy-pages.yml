@@ -1,0 +1,220 @@
+# Distributed under the OSI-approved BSD 3-Clause License.
+# See accompanying file LICENSE-BSD for details.
+
+name: use-deploy-pages
+
+on:
+  workflow_call:
+    inputs:
+      ENABLE:
+        type: string
+        required: false
+        default: 'true'
+        description: >
+          [Optional] Whether to enable the job (e.g., 'true' or 'false'). Defaults to 'true'.
+      RUNNER:
+        type: string
+        required: false
+        default: 'ubuntu-latest'
+        description: >
+          [Optional] The runner image for executing the job. Defaults to 'ubuntu-latest'.
+      CHECKOUT:
+        type: string
+        required: false
+        default: '${{ github.ref }}'
+        description: >
+          [Optional] The git reference to be checked out. Defaults to '\$\{\{ github.ref \}\}'
+      BUILD_RUN_ID:
+        type: string
+        required: true    # [Required]
+        description: >
+          [Required] The numeric ID of the workflow run that uploaded the build artifacts.
+      DEPLOY_ONLY:
+        type: string
+        required: true    # [Required]
+        description: >
+          [Required] Whether to deploy the documentation only (e.g., 'true' or 'false').
+      DEPLOY_BRANCH:
+        type: string
+        required: true    # [Required]
+        description: >
+          [Required] The name of the branch to which the build artifacts will be deployed (e.g., 'pages').
+      ACTOR_NAME:
+        type: string
+        required: true    # [Required]
+        description: >
+          [Required] The user name of the GitHub actor.
+      ACTOR_EMAIL:
+        type: string
+        required: true    # [Required]
+        description: >
+          [Required] The user email of the GitHub actor.
+      GPG_FINGERPRINT:
+        type: string
+        required: true    # [Required]
+        description: >
+          [Required] The fingerprint used for identifying the GPG signing key.
+    secrets:
+      ACTOR_GITHUB_TOKEN:
+        required: true
+        description: >
+          [Required] The personal access token of the GitHub actor.
+      GPG_PRIVATE_KEY:
+        required: true    # [Required]
+        description: >
+          [Required] The ASCII-armored GPG private key.
+      GPG_PASSPHRASE:
+        required: true    # [Required]
+        description: >
+          [Required] The passphrase of the GPG private key.
+
+jobs:
+  download-build-artifacts:
+    if: ${{ inputs.ENABLE == 'true' && inputs.DEPLOY_ONLY == 'false' }}
+    runs-on: ${{ inputs.RUNNER }}
+    steps:
+      - name: Print Contexts/Inputs/Secrets
+        shell: bash
+        run: |
+          echo "[Contexts]"
+          echo "github.job = ${{ github.job }}"
+          echo "github.ref = ${{ github.ref }}"
+          echo "github.ref_name = ${{ github.ref_name }}"
+          echo "github.event_name = ${{ github.event_name }}"
+          echo "github.event.action = ${{ github.event.action }}"
+          echo "github.event.number = ${{ github.event.number }}"
+          echo "github.workflow = ${{ github.workflow }}"
+          echo "github.workflow_ref = ${{ github.workflow_ref }}"
+          echo "github.run_id = ${{ github.run_id }}"
+          echo "github.run_number = ${{ github.run_number }}"
+          echo "github.run_attempt = ${{ github.run_attempt }}"
+          echo "github.server_url = ${{ github.server_url }}"
+          echo "github.repository = ${{ github.repository }}"
+          echo "github.workspace = ${{ github.workspace }}"
+          echo "[Inputs]"
+          echo "inputs.ENABLE = ${{ inputs.ENABLE }}"
+          echo "inputs.RUNNER = ${{ inputs.RUNNER }}"
+          echo "inputs.CHECKOUT = ${{ inputs.CHECKOUT }}"
+          echo "inputs.BUILD_RUN_ID = ${{ inputs.BUILD_RUN_ID }}"
+          echo "inputs.DEPLOY_ONLY = ${{ inputs.DEPLOY_ONLY }}"
+          echo "inputs.DEPLOY_BRANCH = ${{ inputs.DEPLOY_BRANCH }}"
+          echo "inputs.ACTOR_NAME = ${{ inputs.ACTOR_NAME }}"
+          echo "inputs.ACTOR_EMAIL = ${{ inputs.ACTOR_EMAIL }}"
+          echo "inputs.GPG_FINGERPRINT = ${{ inputs.GPG_FINGERPRINT }}"
+          echo "[Secrets]"
+          echo "secrets.ACTOR_GITHUB_TOKEN = ${{ secrets.ACTOR_GITHUB_TOKEN }}"
+          echo "secrets.GPG_PRIVATE_KEY = ${{ secrets.GPG_PRIVATE_KEY }}"
+          echo "secrets.GPG_PASSPHRASE = ${{ secrets.GPG_PASSPHRASE }}"
+
+      - name: Checkout to '${{ inputs.CHECKOUT }}'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.CHECKOUT }}
+          token: ${{ secrets.ACTOR_GITHUB_TOKEN }}
+          submodules: false
+
+      - name: Import GPG key for Signing Commit
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          fingerprint: ${{ inputs.GPG_FINGERPRINT }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+
+      - name: List all GPG keys
+        shell: bash
+        run: |
+          gpg --list-secret-keys
+
+      - name: Download and Merge Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: 'out/${{ inputs.DEPLOY_BRANCH }}'
+          run-id: ${{ inputs.BUILD_RUN_ID }}
+          github-token: ${{ secrets.ACTOR_GITHUB_TOKEN }}
+          merge-multiple: true
+
+      - name: Set up mutex for the '${{ inputs.DEPLOY_BRANCH }}' branch
+        uses: ben-z/gh-action-mutex@v1.0.0-alpha.9
+        with:
+          branch: 'mutex/${{ inputs.DEPLOY_BRANCH }}'
+          repo-token: ${{ secrets.ACTOR_GITHUB_TOKEN }}
+
+      - name: Deploy to the '${{ inputs.DEPLOY_BRANCH }}' branch
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: ${{ inputs.DEPLOY_BRANCH }}
+          folder: 'out/${{ inputs.DEPLOY_BRANCH }}'
+          target-folder: '.'
+          single-commit: true
+          clean: false
+          git-config-name: ${{ inputs.ACTOR_NAME }}
+          git-config-email: ${{ inputs.ACTOR_EMAIL }}
+          token: ${{ secrets.ACTOR_GITHUB_TOKEN }}
+
+  deploy-pages:
+    needs: [ 'download-build-artifacts' ]
+    if: ${{ ( always() ) &&
+            ( !contains(needs.*.result, 'failure') ) &&
+            ( !contains(needs.*.result, 'cancelled') ) &&
+            ( inputs.ENABLE == 'true' ) }}
+    runs-on: ${{ inputs.RUNNER }}
+    # Refer to: https://stackoverflow.com/a/76883315
+    permissions:
+      id-token: write
+      pages: write
+    steps:
+      - name: Print Contexts/Inputs/Secrets
+        shell: bash
+        run: |
+          echo "[Contexts]"
+          echo "github.job = ${{ github.job }}"
+          echo "github.ref = ${{ github.ref }}"
+          echo "github.ref_name = ${{ github.ref_name }}"
+          echo "github.event_name = ${{ github.event_name }}"
+          echo "github.event.action = ${{ github.event.action }}"
+          echo "github.event.number = ${{ github.event.number }}"
+          echo "github.workflow = ${{ github.workflow }}"
+          echo "github.workflow_ref = ${{ github.workflow_ref }}"
+          echo "github.run_id = ${{ github.run_id }}"
+          echo "github.run_number = ${{ github.run_number }}"
+          echo "github.run_attempt = ${{ github.run_attempt }}"
+          echo "github.server_url = ${{ github.server_url }}"
+          echo "github.repository = ${{ github.repository }}"
+          echo "github.workspace = ${{ github.workspace }}"
+          echo "[Inputs]"
+          echo "inputs.RUNNER = ${{ inputs.RUNNER }}"
+          echo "inputs.CHECKOUT = ${{ inputs.CHECKOUT }}"
+          echo "inputs.BUILD_RUN_ID = ${{ inputs.BUILD_RUN_ID }}"
+          echo "inputs.DEPLOY_ONLY = ${{ inputs.DEPLOY_ONLY }}"
+          echo "inputs.DEPLOY_BRANCH = ${{ inputs.DEPLOY_BRANCH }}"
+          echo "inputs.ENABLE = ${{ inputs.ENABLE }}"
+          echo "inputs.ACTOR_NAME = ${{ inputs.ACTOR_NAME }}"
+          echo "inputs.ACTOR_EMAIL = ${{ inputs.ACTOR_EMAIL }}"
+          echo "[Secrets]"
+          echo "secrets.ACTOR_GITHUB_TOKEN = ${{ secrets.ACTOR_GITHUB_TOKEN }}"
+
+      - name: Checkout to 'refs/heads/${{ inputs.DEPLOY_BRANCH }}'
+        uses: actions/checkout@v4
+        with:
+          ref: 'refs/heads/${{ inputs.DEPLOY_BRANCH }}'
+          token: ${{ secrets.ACTOR_GITHUB_TOKEN }}
+          submodules: false
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+        with:
+          token: ${{ secrets.ACTOR_GITHUB_TOKEN }}
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          name: 'github-pages'
+          path: '.'
+
+      - name: Deploy Pages Artifact
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: 'github-pages'
+          token: ${{ secrets.ACTOR_GITHUB_TOKEN }}

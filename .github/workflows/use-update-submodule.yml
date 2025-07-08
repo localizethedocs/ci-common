@@ -179,7 +179,7 @@ jobs:
             - Old commit: ${{ steps.gocs.outputs.OLD_COMMIT }}
             - New commit: ${{ steps.gncs.outputs.NEW_COMMIT }}
 
-            Created by the GitHub Actions:
+            Created by the GitHub Workflow:
 
             - File: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/${{ github.workflow }}.yml
             - Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

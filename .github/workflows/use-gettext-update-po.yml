@@ -224,7 +224,7 @@ jobs:
             Before: ${{ steps.po-before.outputs.VERSION_REFERENCE }}
             After: ${{ steps.po-after.outputs.VERSION_REFERENCE }}
 
-            Created by the GitHub Actions:
+            Created by the GitHub Workflow:
 
             - File: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/${{ github.workflow }}.yml
             - Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

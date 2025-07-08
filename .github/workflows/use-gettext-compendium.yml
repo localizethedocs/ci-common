@@ -195,7 +195,7 @@ jobs:
 
             Merged .po files of '${{ inputs.VERSION }}' with compendium of '${{ steps.gocv.outputs.VERSION_COMPENDIUM }}'.
 
-            Created by the GitHub Actions:
+            Created by the GitHub Workflow:
 
             - File: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/${{ github.workflow }}.yml
             - Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

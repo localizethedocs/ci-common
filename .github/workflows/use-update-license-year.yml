@@ -142,7 +142,7 @@ jobs:
           prTitle: |
             📝 docs(license): update copyright year(s)
           prBody: |
-            Created by the GitHub Actions:
+            Created by the GitHub Workflow:
 
             - File: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/${{ github.workflow }}.yml
             - Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}

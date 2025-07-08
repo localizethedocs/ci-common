@@ -240,7 +240,7 @@ jobs:
           message: |
             🌐 pot(${{ inputs.VERSION }}): update .pot from Sphinx
 
-            Update .pot files for '${{ inputs.VERSION }}' version from Sphinx.
+            Updated .pot files for '${{ inputs.VERSION }}' version from Sphinx.
 
             Before: ${{ steps.pot-before.outputs.VERSION_REFERENCE }}
             After: ${{ steps.pot-after.outputs.VERSION_REFERENCE }}
@@ -264,9 +264,9 @@ jobs:
           title: |
             🌐 pot(${{ inputs.VERSION }}): update .pot from Sphinx
           body: |
-            Created by the GitHub Actions:
+            Created by the GitHub Workflow:
 
-            - workflow: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/${{ github.workflow }}.yml
+            - File: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/${{ github.workflow }}.yml
             - Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
             - Job: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ steps.gcjc.outputs.job_id }}
 

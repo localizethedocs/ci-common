@@ -233,7 +233,6 @@ jobs:
           cwd: './l10n'
           add: './${{ inputs.VERSION }}'
           push: 'origin sphinx/pot/${{ inputs.VERSION }} --set-upstream --force'
-          commit: '--signoff'
           new_branch: sphinx/pot/${{ inputs.VERSION }}
           author_name: ${{ inputs.ACTOR_NAME }}
           author_email: ${{ inputs.ACTOR_EMAIL }}

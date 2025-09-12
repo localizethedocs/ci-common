@@ -70,7 +70,7 @@ on:
           [Required] The passphrase of the GPG private key.
 
 jobs:
-  gettext-compend-po:
+  gettext-compendium:
     if: ${{ inputs.ENABLE == 'true' }}
     runs-on: ${{ inputs.RUNNER }}
     steps:

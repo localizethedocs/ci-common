@@ -244,6 +244,12 @@ jobs:
             Before: ${{ steps.pot-before.outputs.VERSION_REFERENCE }}
             After: ${{ steps.pot-after.outputs.VERSION_REFERENCE }}
 
+            Created by the GitHub Workflow:
+
+            - File: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/${{ github.workflow }}.yml
+            - Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            - Job: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ steps.gcjc.outputs.job_id }}
+
       - name: Check Outputs of the Commit
         if: ${{ inputs.CREATE_PR == 'true' && steps.acc.outputs.committed == 'true' }}
         shell: bash
@@ -265,9 +271,7 @@ jobs:
           body: |
             Created by the GitHub Workflow:
 
-            - File: ${{ github.server_url }}/${{ github.repository }}/actions/workflows/${{ github.workflow }}.yml
-            - Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-            - Job: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/job/${{ steps.gcjc.outputs.job_id }}
+            ${{ github.server_url }}/${{ github.repository }}/actions/workflows/${{ github.workflow }}.yml
 
       - name: Check Outputs of the Pull Request
         if: ${{ inputs.CREATE_PR == 'true' && steps.acc.outputs.committed == 'true' }}

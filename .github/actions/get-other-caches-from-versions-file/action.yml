@@ -32,7 +32,7 @@ runs:
   steps:
     - name: Get the Version Group from the versions.json file
       id: gvgv
-      uses: ltdorgtest/ci-common/.github/actions/get-version-group-from-versions-file@main
+      uses: localizethedocs/ci-common/.github/actions/get-version-group-from-versions-file@main
       with:
         version: ${{ inputs.version }}
         versions-file: ${{ inputs.versions-file }}

@@ -136,22 +136,22 @@ jobs:
           gpg --list-secret-keys
 
       - name: Install CMake
-        uses: ltdorgtest/ci-common/.github/actions/install-cmake@main
+        uses: localizethedocs/ci-common/.github/actions/install-cmake@main
         with:
           cmake-version: ${{ inputs.CMAKE_VERSION }}
 
       - name: Install Gettext
-        uses: ltdorgtest/ci-common/.github/actions/install-gettext@main
+        uses: localizethedocs/ci-common/.github/actions/install-gettext@main
 
       - name: Get Other Caches from the versions.json file
         id: gocv
-        uses: ltdorgtest/ci-common/.github/actions/get-other-caches-from-versions-file@main
+        uses: localizethedocs/ci-common/.github/actions/get-other-caches-from-versions-file@main
         with:
           version: ${{ inputs.VERSION }}
           versions-file: 'versions.json'
 
       - name: Configure with '${{ inputs.LANGUAGE }}' preset for '${{ inputs.VERSION }}' version
-        uses: ltdorgtest/ci-common/.github/actions/cmake-configure@main
+        uses: localizethedocs/ci-common/.github/actions/cmake-configure@main
         with:
           config-preset: ${{ inputs.LANGUAGE }}
           cache-version: ${{ inputs.VERSION }}
@@ -161,20 +161,20 @@ jobs:
 
       - name: Get VERSION_REFERENCE of '.po' Before Building
         id: po-before
-        uses: ltdorgtest/ci-common/.github/actions/get-version-reference-from-references-file@main
+        uses: localizethedocs/ci-common/.github/actions/get-version-reference-from-references-file@main
         with:
           jq-filter: '.po'
           references-file: 'l10n/${{ inputs.VERSION }}/references.json'
 
       - name: Build the 'gettext_update_po' target
-        uses: ltdorgtest/ci-common/.github/actions/cmake-build-target@main
+        uses: localizethedocs/ci-common/.github/actions/cmake-build-target@main
         with:
           build-directory: out/build/${{ inputs.LANGUAGE }}
           build-target: 'gettext_update_po'
 
       - name: Get VERSION_REFERENCE of '.po' After Building
         id: po-after
-        uses: ltdorgtest/ci-common/.github/actions/get-version-reference-from-references-file@main
+        uses: localizethedocs/ci-common/.github/actions/get-version-reference-from-references-file@main
         with:
           jq-filter: '.po'
           references-file: 'l10n/${{ inputs.VERSION }}/references.json'

@@ -117,26 +117,26 @@ jobs:
           submodules: true
 
       - name: Install CMake
-        uses: ltdorgtest/ci-common/.github/actions/install-cmake@main
+        uses: localizethedocs/ci-common/.github/actions/install-cmake@main
         with:
           cmake-version: ${{ inputs.CMAKE_VERSION }}
 
       - name: Install Gettext
-        uses: ltdorgtest/ci-common/.github/actions/install-gettext@main
+        uses: localizethedocs/ci-common/.github/actions/install-gettext@main
 
       - name: Install Crowdin
-        uses: ltdorgtest/ci-common/.github/actions/install-crowdin@main
+        uses: localizethedocs/ci-common/.github/actions/install-crowdin@main
         with:
           crowdin-version: ${{ inputs.CROWDIN_VERSION }}
 
       - name: Get Other Caches from the versions.json file
         id: gocv
-        uses: ltdorgtest/ci-common/.github/actions/get-other-caches-from-versions-file@main
+        uses: localizethedocs/ci-common/.github/actions/get-other-caches-from-versions-file@main
         with:
           version: ${{ inputs.VERSION }}
 
       - name: Configure with 'all' preset for the '${{ inputs.VERSION }}' version
-        uses: ltdorgtest/ci-common/.github/actions/cmake-configure@main
+        uses: localizethedocs/ci-common/.github/actions/cmake-configure@main
         with:
           config-preset: 'all'
           cache-version: ${{ inputs.VERSION }}
@@ -144,7 +144,7 @@ jobs:
           cache-auto-depend: 'OFF'
 
       - name: Build the 'crowdin_upload_pot' target
-        uses: ltdorgtest/ci-common/.github/actions/cmake-build-target@main
+        uses: localizethedocs/ci-common/.github/actions/cmake-build-target@main
         with:
           build-directory: out/build/all
           build-target: 'crowdin_upload_pot'

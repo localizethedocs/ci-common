@@ -106,6 +106,16 @@ inputs:
     default: '[default]'
     description: >
       [Optional] The value for the SPHINX_GETTEXT_TARGETS cache entry. Defaults to '[default]'.
+  cache-mdbook-renderer:
+    required: false
+    default: '[default]'
+    description: >
+      [Optional] The value for the MDBOOK_RENDERER cache entry. Defaults to '[default]'.
+  cache-mdbook-xgettext-depth:
+    required: false
+    default: '[default]'
+    description: >
+      [Optional] The value for the MDBOOK_XGETTEXT_DEPTH cache entry. Defaults to '[default]'.
   cache-gettext-wrap-width:
     required: false
     default: '[default]'

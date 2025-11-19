@@ -129,19 +129,19 @@ jobs:
           gpg --list-secret-keys
 
       - name: Install CMake
-        uses: ltdorgtest/ci-common/.github/actions/install-cmake@main
+        uses: localizethedocs/ci-common/.github/actions/install-cmake@main
         with:
           cmake-version: ${{ inputs.CMAKE_VERSION }}
 
       - name: Configure with 'all' preset for '${{ inputs.VERSION }}' version
-        uses: ltdorgtest/ci-common/.github/actions/cmake-configure@main
+        uses: localizethedocs/ci-common/.github/actions/cmake-configure@main
         with:
           config-preset: 'all'
           cache-version: ${{ inputs.VERSION }}
 
       - name: Build the 'create_rtd_symlinks' target
         if: ${{ inputs.DEPLOY_RTD == 'true' }}
-        uses: ltdorgtest/ci-common/.github/actions/cmake-build-target@main
+        uses: localizethedocs/ci-common/.github/actions/cmake-build-target@main
         with:
           build-directory: out/build/all
           build-target: 'create_rtd_symlinks'

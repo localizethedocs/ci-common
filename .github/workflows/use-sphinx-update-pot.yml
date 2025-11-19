@@ -135,27 +135,27 @@ jobs:
           gpg --list-secret-keys
 
       - name: Install CMake
-        uses: ltdorgtest/ci-common/.github/actions/install-cmake@main
+        uses: localizethedocs/ci-common/.github/actions/install-cmake@main
         with:
           cmake-version: ${{ inputs.CMAKE_VERSION }}
 
       - name: Install Conda
-        uses: ltdorgtest/ci-common/.github/actions/install-conda@main
+        uses: localizethedocs/ci-common/.github/actions/install-conda@main
         with:
           conda-version: ${{ inputs.CONDA_VERSION }}
 
       - name: Install Gettext
-        uses: ltdorgtest/ci-common/.github/actions/install-gettext@main
+        uses: localizethedocs/ci-common/.github/actions/install-gettext@main
 
       - name: Get Other Caches from the versions.json file
         id: gocv
-        uses: ltdorgtest/ci-common/.github/actions/get-other-caches-from-versions-file@main
+        uses: localizethedocs/ci-common/.github/actions/get-other-caches-from-versions-file@main
         with:
           version: ${{ inputs.VERSION }}
           versions-file: 'versions.json'
 
       - name: Configure with 'all' preset for '${{ inputs.VERSION }}' version
-        uses: ltdorgtest/ci-common/.github/actions/cmake-configure@main
+        uses: localizethedocs/ci-common/.github/actions/cmake-configure@main
         with:
           config-preset: 'all'
           cache-version: ${{ inputs.VERSION }}
@@ -165,39 +165,39 @@ jobs:
 
       - name: Get VERSION_REFERENCE of '.pot' Before Building
         id: pot-before
-        uses: ltdorgtest/ci-common/.github/actions/get-version-reference-from-references-file@main
+        uses: localizethedocs/ci-common/.github/actions/get-version-reference-from-references-file@main
         with:
           jq-filter: '.pot'
           references-file: 'l10n/${{ inputs.VERSION }}/references.json'
 
       - name: Build the 'prepare_repositories' target
-        uses: ltdorgtest/ci-common/.github/actions/cmake-build-target@main
+        uses: localizethedocs/ci-common/.github/actions/cmake-build-target@main
         with:
           build-directory: out/build/all
           build-target: 'prepare_repositories'
 
       - name: Build the 'install_requirements' target
-        uses: ltdorgtest/ci-common/.github/actions/cmake-build-target@main
+        uses: localizethedocs/ci-common/.github/actions/cmake-build-target@main
         with:
           build-directory: out/build/all
           build-target: 'install_requirements'
 
       - name: Build the 'sphinx_update_pot' target
-        uses: ltdorgtest/ci-common/.github/actions/cmake-build-target@main
+        uses: localizethedocs/ci-common/.github/actions/cmake-build-target@main
         with:
           build-directory: out/build/all
           build-target: 'sphinx_update_pot'
 
       - name: Get VERSION_REFERENCE of '.pot' After Building
         id: pot-after
-        uses: ltdorgtest/ci-common/.github/actions/get-version-reference-from-references-file@main
+        uses: localizethedocs/ci-common/.github/actions/get-version-reference-from-references-file@main
         with:
           jq-filter: '.pot'
           references-file: 'l10n/${{ inputs.VERSION }}/references.json'
 
       - name: Get PULL_REQUEST_LABEL_LIST from versions.json
         id: gllpr
-        uses: ltdorgtest/ci-common/.github/actions/get-pull-request-label-list-from-versions-file@main
+        uses: localizethedocs/ci-common/.github/actions/get-pull-request-label-list-from-versions-file@main
         with:
           version: ${{ inputs.VERSION }}
           tms-label: 'crowdin'

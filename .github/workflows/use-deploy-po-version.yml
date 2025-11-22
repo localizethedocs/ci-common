@@ -133,6 +133,9 @@ jobs:
         with:
           cmake-version: ${{ inputs.CMAKE_VERSION }}
 
+      - name: Install Gettext
+        uses: localizethedocs/ci-common/.github/actions/install-gettext@main
+
       - name: Configure with 'all' preset for '${{ inputs.VERSION }}' version
         uses: localizethedocs/ci-common/.github/actions/cmake-configure@main
         with:

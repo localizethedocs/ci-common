@@ -220,7 +220,7 @@ jobs:
           echo "Run URL:      ${{ steps.gcjc.outputs.run_url }}"
 
       - name: Set up mutex for 'l10n' branch
-        uses: ben-z/gh-action-mutex@v1.0.0-alpha.9
+        uses: ben-z/gh-action-mutex@v1.0.0-alpha.10
         with:
           branch: 'mutex/l10n'
           repo-token: ${{ secrets.ACTOR_GITHUB_TOKEN }}

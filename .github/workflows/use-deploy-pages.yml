@@ -136,7 +136,7 @@ jobs:
           merge-multiple: true
 
       - name: Set up mutex for the '${{ inputs.DEPLOY_BRANCH }}' branch
-        uses: ben-z/gh-action-mutex@v1.0.0-alpha.9
+        uses: ben-z/gh-action-mutex@v1.0.0-alpha.10
         with:
           branch: 'mutex/${{ inputs.DEPLOY_BRANCH }}'
           repo-token: ${{ secrets.ACTOR_GITHUB_TOKEN }}

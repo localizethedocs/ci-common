@@ -239,7 +239,7 @@ jobs:
 
       - name: Set up mutex for the 'main' branch
         if: ${{ inputs.VERSION == 'docs' }}
-        uses: ben-z/gh-action-mutex@v1.0.0-alpha.9
+        uses: ben-z/gh-action-mutex@v1.0.0-alpha.10
         with:
           branch: 'mutex/main'
           repo-token: ${{ secrets.ACTOR_GITHUB_TOKEN }}

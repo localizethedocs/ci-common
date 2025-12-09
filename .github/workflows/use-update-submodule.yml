@@ -156,7 +156,7 @@ jobs:
           echo "Run URL:      ${{ steps.gcjc.outputs.run_url }}"
 
       - name: Set up mutex for the 'main' branch
-        uses: ben-z/gh-action-mutex@v1.0.0-alpha.9
+        uses: ben-z/gh-action-mutex@v1.0.0-alpha.10
         with:
           branch: 'mutex/source'
           repo-token: ${{ secrets.ACTOR_GITHUB_TOKEN }}

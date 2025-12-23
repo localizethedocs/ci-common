@@ -24,6 +24,12 @@ on:
         default: '${{ github.ref }}'
         description: >
           [Optional] The git reference to be checked out. Defaults to '\$\{\{ github.ref \}\}'
+      FREE_SPACE:
+        type: string
+        required: false
+        default: 'false'
+        description: >
+          [Optional] Whether to free disk space before building (e.g., 'true' or 'false'). Defaults to 'false'.
       CMAKE_VERSION:
         type: string
         required: false
@@ -99,6 +105,7 @@ jobs:
           echo "inputs.ENABLE = ${{ inputs.ENABLE }}"
           echo "inputs.RUNNER = ${{ inputs.RUNNER }}"
           echo "inputs.CHECKOUT = ${{ inputs.CHECKOUT }}"
+          echo "inputs.FREE_SPACE = ${{ inputs.FREE_SPACE }}"
           echo "inputs.CMAKE_VERSION = ${{ inputs.CMAKE_VERSION }}"
           echo "inputs.CONDA_VERSION = ${{ inputs.CONDA_VERSION }}"
           echo "inputs.VERSION = ${{ inputs.VERSION }}"
@@ -119,6 +126,18 @@ jobs:
           token: ${{ secrets.ACTOR_GITHUB_TOKEN }}
           submodules: true
           fetch-depth: 0
+
+      - name: Free Disk Space
+        if: ${{ inputs.FREE_SPACE == 'true' }}
+        uses: jlumbroso/free-disk-space@v1.3.1
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
 
       - name: Import GPG key for Signing Commit
         uses: crazy-max/ghaction-import-gpg@v6

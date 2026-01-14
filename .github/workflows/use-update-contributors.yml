@@ -1,0 +1,179 @@
+# Distributed under the OSI-approved BSD 3-Clause License.
+# See accompanying file LICENSE-BSD for details.
+
+name: use-update-contributors
+
+on:
+  workflow_call:
+    inputs:
+      ENABLE:
+        type: string
+        required: false
+        default: 'true'
+        description: >
+          [Optional] Whether to enable the job (e.g., 'true' or 'false'). Defaults to 'true'.
+      RUNNER:
+        type: string
+        required: false
+        default: 'ubuntu-latest'
+        description: >
+          [Optional] The runner image for executing the job. Defaults to 'ubuntu-latest'.
+      CHECKOUT:
+        type: string
+        required: false
+        default: '${{ github.ref }}'
+        description: >
+          [Optional] The git reference to be checked out. Defaults to '\$\{\{ github.ref \}\}'
+      DEPLOY_BRANCH:
+        type: string
+        required: true    # [Required]
+        description: >
+          [Required] The name of the branch to which the build artifacts will be deployed (e.g., 'pages').
+      CROWDIN_TABLE_COL:
+        type: string
+        required: false
+        default: '7'
+        description: >
+          [Optional] The number of columns in the Crowdin contributors table. Defaults to '7'.
+      CROWDIN_TABLE_ROW:
+        type: string
+        required: false
+        default: '5'
+        description: >
+          [Optional] The number of rows in the Crowdin contributors table. Defaults to '5'.
+      CROWDIN_EXCLUDED_USERS:
+        type: string
+        required: false
+        default: 'localizethedocs'
+        description: >
+          [Optional] Comma-separated list of Crowdin users to exclude from the contributors list. Defaults to 'localizethedocs'.
+      CROWDIN_MIN_WORDS_CONTRIBUTED:
+        type: string
+        required: false
+        default: '0'
+        description: >
+          [Optional] The minimum number of words contributed to be included in the Crowdin contributors list. Defaults to '0'.
+      ACTOR_NAME:
+        type: string
+        required: true    # [Required]
+        description: >
+          [Required] The user name of the GitHub actor.
+      ACTOR_EMAIL:
+        type: string
+        required: true    # [Required]
+        description: >
+          [Required] The user email of the GitHub actor.
+      CROWDIN_PROJECT_ID:
+        type: string
+        required: true    # [Required]
+        description: >
+          [Required] The numeric ID of the Crowdin project.
+      CROWDIN_ORGANIZATION:
+        type: string
+        required: false
+        default: ''
+        description: >
+          [Required] The organization name of the Crowdin Enterprise. Defaults to an empty string.
+    secrets:
+      ACTOR_GITHUB_TOKEN:
+        required: true
+        description: >
+          [Required] The personal access token of the GitHub actor.
+      CROWDIN_PERSONAL_TOKEN:
+        required: true    # [Required]
+        description: >
+          [Required] The personal access token for Crowdin authentication.
+
+jobs:
+  update-contributors:
+    if: ${{ inputs.ENABLE == 'true' }}
+    runs-on: ${{ inputs.RUNNER }}
+    steps:
+      - name: Print Contexts/Inputs/Secrets
+        shell: bash
+        run: |
+          echo "[Contexts]"
+          echo "github.job = ${{ github.job }}"
+          echo "github.ref = ${{ github.ref }}"
+          echo "github.ref_name = ${{ github.ref_name }}"
+          echo "github.event_name = ${{ github.event_name }}"
+          echo "github.event.action = ${{ github.event.action }}"
+          echo "github.event.number = ${{ github.event.number }}"
+          echo "github.workflow = ${{ github.workflow }}"
+          echo "github.workflow_ref = ${{ github.workflow_ref }}"
+          echo "github.run_id = ${{ github.run_id }}"
+          echo "github.run_number = ${{ github.run_number }}"
+          echo "github.run_attempt = ${{ github.run_attempt }}"
+          echo "github.server_url = ${{ github.server_url }}"
+          echo "github.repository = ${{ github.repository }}"
+          echo "github.workspace = ${{ github.workspace }}"
+          echo "[Inputs]"
+          echo "inputs.ENABLE = ${{ inputs.ENABLE }}"
+          echo "inputs.RUNNER = ${{ inputs.RUNNER }}"
+          echo "inputs.CHECKOUT = ${{ inputs.CHECKOUT }}"
+          echo "inputs.DEPLOY_BRANCH = ${{ inputs.DEPLOY_BRANCH }}"
+          echo "inputs.CROWDIN_TABLE_COL = ${{ inputs.CROWDIN_TABLE_COL }}"
+          echo "inputs.CROWDIN_TABLE_ROW = ${{ inputs.CROWDIN_TABLE_ROW }}"
+          echo "inputs.CROWDIN_EXCLUDED_USERS = ${{ inputs.CROWDIN_EXCLUDED_USERS }}"
+          echo "inputs.CROWDIN_MIN_WORDS_CONTRIBUTED = ${{ inputs.CROWDIN_MIN_WORDS_CONTRIBUTED }}"
+          echo "inputs.ACTOR_NAME = ${{ inputs.ACTOR_NAME }}"
+          echo "inputs.ACTOR_EMAIL = ${{ inputs.ACTOR_EMAIL }}"
+          echo "inputs.CROWDIN_PROJECT_ID = ${{ inputs.CROWDIN_PROJECT_ID }}"
+          echo "inputs.CROWDIN_ORGANIZATION = ${{ inputs.CROWDIN_ORGANIZATION }}"
+          echo "[Secrets]"
+          echo "secrets.ACTOR_GITHUB_TOKEN = ${{ secrets.ACTOR_GITHUB_TOKEN }}"
+          echo "secrets.CROWDIN_PERSONAL_TOKEN = ${{ secrets.CROWDIN_PERSONAL_TOKEN }}"
+
+      - name: Checkout to '${{ inputs.CHECKOUT }}'
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.CHECKOUT }}
+          token: ${{ secrets.ACTOR_GITHUB_TOKEN }}
+          submodules: false
+
+      - name: Calculate values for contributors tables
+        id: calc
+        shell: bash
+        run: |
+          echo "[Crowdin Contributors Table]"
+          echo "CROWDIN_TABLE_COL         = ${{ inputs.CROWDIN_TABLE_COL }}"
+          echo "CROWDIN_TABLE_ROW         = ${{ inputs.CROWDIN_TABLE_ROW }}"
+          CROWDIN_MAX_CONTRIBUTORS=$(( ${{ inputs.CROWDIN_TABLE_COL }} * ${{ inputs.CROWDIN_TABLE_ROW }} ))
+          echo "CROWDIN_MAX_CONTRIBUTORS  = $CROWDIN_MAX_CONTRIBUTORS"
+          echo "CROWDIN_MAX_CONTRIBUTORS=$CROWDIN_MAX_CONTRIBUTORS" >> $GITHUB_OUTPUT
+
+      - name: Create 'out/${{ inputs.DEPLOY_BRANCH }}' directory
+        shell: bash
+        run: mkdir -p out/${{ inputs.DEPLOY_BRANCH }}
+
+      - name: Generate Crowdin Contributors
+        uses: andrii-bodnar/action-crowdin-contributors@v3
+        with:
+          svg: true
+          svg_output_path: 'out/${{ inputs.DEPLOY_BRANCH }}/crowdin-contributors.svg'
+          min_words_contributed: ${{ inputs.CROWDIN_MIN_WORDS_CONTRIBUTED }}
+          max_contributors: ${{ steps.calc.outputs.CROWDIN_MAX_CONTRIBUTORS }}
+          contributors_per_line: ${{ inputs.CROWDIN_TABLE_COL }}
+          excluded_users: ${{ inputs.CROWDIN_EXCLUDED_USERS }}
+        env:
+          CROWDIN_PROJECT_ID: ${{ inputs.CROWDIN_PROJECT_ID }}
+          CROWDIN_ORGANIZATION: ${{ inputs.CROWDIN_ORGANIZATION }}
+          CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+
+      - name: Set up mutex for the '${{ inputs.DEPLOY_BRANCH }}' branch
+        uses: ben-z/gh-action-mutex@v1.0.0-alpha.9
+        with:
+          branch: 'mutex/${{ inputs.DEPLOY_BRANCH }}'
+          repo-token: ${{ secrets.ACTOR_GITHUB_TOKEN }}
+
+      - name: Deploy to the '${{ inputs.DEPLOY_BRANCH }}' branch
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: ${{ inputs.DEPLOY_BRANCH }}
+          folder: 'out/${{ inputs.DEPLOY_BRANCH }}'
+          target-folder: '.'
+          single-commit: true
+          clean: false
+          git-config-name: ${{ inputs.ACTOR_NAME }}
+          git-config-email: ${{ inputs.ACTOR_EMAIL }}
+          token: ${{ secrets.ACTOR_GITHUB_TOKEN }}

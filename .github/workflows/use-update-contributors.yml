@@ -74,6 +74,11 @@ on:
         default: ''
         description: >
           [Required] The organization name of the Crowdin Enterprise. Defaults to an empty string.
+      GPG_FINGERPRINT:
+        type: string
+        required: true    # [Required]
+        description: >
+          [Required] The fingerprint used for identifying the GPG signing key.
     secrets:
       ACTOR_GITHUB_TOKEN:
         required: true
@@ -83,6 +88,14 @@ on:
         required: true    # [Required]
         description: >
           [Required] The personal access token for Crowdin authentication.
+      GPG_PRIVATE_KEY:
+        required: true    # [Required]
+        description: >
+          [Required] The ASCII-armored GPG private key.
+      GPG_PASSPHRASE:
+        required: true    # [Required]
+        description: >
+          [Required] The passphrase of the GPG private key.
 
 jobs:
   update-contributors:
@@ -120,9 +133,12 @@ jobs:
           echo "inputs.ACTOR_EMAIL = ${{ inputs.ACTOR_EMAIL }}"
           echo "inputs.CROWDIN_PROJECT_ID = ${{ inputs.CROWDIN_PROJECT_ID }}"
           echo "inputs.CROWDIN_ORGANIZATION = ${{ inputs.CROWDIN_ORGANIZATION }}"
+          echo "inputs.GPG_FINGERPRINT = ${{ inputs.GPG_FINGERPRINT }}"
           echo "[Secrets]"
           echo "secrets.ACTOR_GITHUB_TOKEN = ${{ secrets.ACTOR_GITHUB_TOKEN }}"
           echo "secrets.CROWDIN_PERSONAL_TOKEN = ${{ secrets.CROWDIN_PERSONAL_TOKEN }}"
+          echo "secrets.GPG_PRIVATE_KEY = ${{ secrets.GPG_PRIVATE_KEY }}"
+          echo "secrets.GPG_PASSPHRASE = ${{ secrets.GPG_PASSPHRASE }}"
 
       - name: Checkout to '${{ inputs.CHECKOUT }}'
         uses: actions/checkout@v4
@@ -130,6 +146,20 @@ jobs:
           ref: ${{ inputs.CHECKOUT }}
           token: ${{ secrets.ACTOR_GITHUB_TOKEN }}
           submodules: false
+
+      - name: Import GPG key for Signing Commit
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.GPG_PASSPHRASE }}
+          fingerprint: ${{ inputs.GPG_FINGERPRINT }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+
+      - name: List all GPG keys
+        shell: bash
+        run: |
+          gpg --list-secret-keys
 
       - name: Calculate values for contributors tables
         id: calc

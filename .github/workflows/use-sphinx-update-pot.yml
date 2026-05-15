@@ -279,7 +279,7 @@ jobs:
       - name: Create a Pull Request
         id: cpr
         if: ${{ inputs.CREATE_PR == 'true' && steps.acc.outputs.committed == 'true' }}
-        uses: devops-infra/action-pull-request@v0.5.5
+        uses: devops-infra/action-pull-request@v1.0.2
         with:
           github_token: ${{ secrets.ACTOR_GITHUB_TOKEN }}  # required
           source_branch: sphinx/pot/${{ inputs.VERSION }}

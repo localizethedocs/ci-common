@@ -36,6 +36,11 @@ inputs:
     default: 'false'
     description: >
       [Optional] Whether to disable progress on executed command. Defaults to 'false'.
+  crowdin-output:
+    required: false
+    default: ''
+    description: >
+      [Optional] The output format of the command. Defaults to an empty string.
   crowdin-verbose:
     required: false
     default: 'false'
@@ -89,6 +94,11 @@ runs:
           elif [[ "${KEY}" == "crowdin-no-progress" ]]; then
             if [[ "${VALUE}" == "true" ]]; then
               CROWDIN_ARG="--no-progress"
+            fi
+          elif [[ "${KEY}" == "crowdin-output" ]]; then
+            if [[ "${VALUE}" != "" ]]; then
+              CROWDIN_OUTPUT="${{ inputs.crowdin-output }}"
+              CROWDIN_ARG="--output=${CROWDIN_OUTPUT}"
             fi
           elif [[ "${KEY}" == "crowdin-verbose" ]]; then
             if [[ "${VALUE}" == "true" ]]; then
